@@ -1,12 +1,331 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hello, GitHub Pages!</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>yourname :: terminal</title>
+  <meta name="description" content="Terminal-style personal homepage" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💻</text></svg>">
+  <style>
+    :root{
+      --bg:#0b0d10; --fg:#d7e3e7; --muted:#7a8a90; --accent:#6ee7b7; --danger:#ff6b6b; --link:#8ab4f8;
+      --glow:0 0 12px rgba(110,231,183,.25);
+      --font: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono","Cascadia Mono","Courier New", monospace;
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f7f8fa; --fg:#0f172a; --muted:#475569; --accent:#059669; --link:#1d4ed8; --glow:0 0 0 rgba(0,0,0,0) }
+    }
+    [data-theme="light"]{ --bg:#f7f8fa; --fg:#0f172a; --muted:#475569; --accent:#059669; --link:#1d4ed8; --glow:0 0 0 rgba(0,0,0,0)}
+    [data-theme="dark"]{ --bg:#0b0d10; --fg:#d7e3e7; --muted:#7a8a90; --accent:#6ee7b7; --link:#8ab4f8; --glow:0 0 12px rgba(110,231,183,.25) }
+
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 600px at 20% -10%, #1a1f27 0%, transparent 60%) , var(--bg);
+      color:var(--fg); font:16px/1.6 var(--font);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{ width: min(980px, 92vw); height: min(680px, 86vh); background:rgba(0,0,0,.35);
+      border:1px solid #ffffff14; border-radius:16px; box-shadow:0 20px 50px #00000055, var(--glow);
+      backdrop-filter: blur(6px); padding:18px 18px 14px; display:flex; flex-direction:column;
+    }
+    .titlebar{ display:flex; align-items:center; gap:10px; padding:4px 0 10px 0; user-select:none }
+    .dots{ display:flex; gap:8px }
+    .dot{ width:12px; height:12px; border-radius:50% }
+    .dot.red{ background:#ff5f56 } .dot.yellow{ background:#ffbd2e } .dot.green{ background:#27c93f }
+    .title{ margin-left:6px; color:var(--muted); font-size:14px }
+
+    .screen{ flex:1; overflow:auto; padding:14px; background:linear-gradient(transparent 97%, rgba(255,255,255,.06) 100%) repeat-y;
+      border-radius:10px; border:1px solid #ffffff10;
+    }
+    .line{ white-space:pre-wrap; word-break:break-word }
+    .dim{ color:var(--muted) }
+    .accent{ color:var(--accent) }
+    .danger{ color:var(--danger) }
+    a{ color:var(--link); text-decoration:none } a:hover{ text-decoration:underline }
+
+    .prompt{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .caret{ display:inline-block; width:10px; background:var(--accent); animation:blink 1s step-end infinite }
+    @keyframes blink{ 50%{ background:transparent } }
+
+    .input{
+      flex:1; outline:none; border:none; background:transparent; color:var(--fg);
+      font:16px/1.6 var(--font);
+    }
+
+    .footer{ margin-top:8px; text-align:right; color:var(--muted); font-size:12px }
+
+    /* small CRT scanline vibe */
+    .screen:after{
+      content:""; position:sticky; bottom:-14px; left:0; right:0; height:14px;
+      background:linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+      pointer-events:none;
+    }
+    /* mobile */
+    @media (max-width:640px){ .wrap{height: 86vh} .title{display:none} }
+  </style>
 </head>
 <body>
-  <h1>欢迎来到我的主页 🎉</h1>
-  <p>这是我的第一版个人主页，托管在 GitHub Pages。</p>
+<div class="wrap" id="app" data-theme="auto">
+  <div class="titlebar">
+    <div class="dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+    <div class="title">yourname@github: ~ / terminal</div>
+  </div>
+
+  <div id="screen" class="screen" aria-live="polite" aria-label="terminal output">
+    <div class="line">Welcome to <span class="accent">yourname</span>’s terminal. Type <span class="accent">help</span> to start.</div>
+  </div>
+
+  <div class="prompt">
+    <span class="dim" id="ps1">yourname@home:~$</span>
+    <input id="cmd" class="input" autocomplete="off" autofocus spellcheck="false" aria-label="terminal input" />
+    <span class="caret"></span>
+  </div>
+
+  <div class="footer">Tip: Press <span class="accent">Tab</span> to autocomplete, <span class="accent">↑/↓</span> to navigate history.</div>
+</div>
+
+<script>
+  /* ========= 1) 可配置的个人信息（改这里） ========= */
+  const PROFILE = {
+    name: "Your Name",
+    handle: "yourname",
+    title: "CS Student · Systems & AI",
+    email: "you@example.com",
+    location: "Xiamen / Remote",
+    resumeUrl: "resume.pdf", // 放到根目录即可
+    socials: {
+      github: "https://github.com/yourname",
+      linkedin: "https://www.linkedin.com/in/yourname/",
+      twitter: "https://x.com/yourname"
+    },
+    projects: [
+      { name: "GraphRAG", desc: "图结构 RAG，关系抽取 & 可解释检索", url: "https://github.com/yourname/graph-rag" },
+      { name: "GWAS Pipeline", desc: "REGENIE + Hail 云端并行，自动绘图", url: "https://github.com/yourname/gwas-pipeline" },
+      { name: "TaskSys", desc: "工作窃取队列与粒度控制", url: "https://github.com/yourname/tasksys" },
+    ],
+    readme: `# README
+Hi, I'm ${this?.name || 'Your Name'}.
+This is my terminal-style homepage. Try commands: help, about, skills, projects, cv, contact, socials, theme, clear, whoami, ls, cat README, open <url>.`
+  };
+
+  /* ========= 2) 终端核心逻辑 ========= */
+  const el = {
+    screen: document.getElementById('screen'),
+    input: document.getElementById('cmd'),
+    ps1: document.getElementById('ps1'),
+    app: document.getElementById('app'),
+  };
+
+  const STATE = {
+    history: JSON.parse(localStorage.getItem('hist') || '[]'),
+    idx: null,
+    theme: localStorage.getItem('theme') || 'auto',
+    commands: {}
+  };
+
+  setTheme(STATE.theme);
+  renderMOTD();
+
+  function renderMOTD(){
+    const lines = [
+      `┌────────────────────────────────────────────────────────────┐`,
+      `│  ${PROFILE.name}  —  ${PROFILE.title}`,
+      `│  Location: ${PROFILE.location}`,
+      `│  Email: ${PROFILE.email}`,
+      `│  GitHub: ${PROFILE.socials.github}`,
+      `└────────────────────────────────────────────────────────────┘`,
+      `Type "help" to see available commands.`
+    ];
+    lines.forEach(l => print(l));
+  }
+
+  /* 打印与滚动 */
+  function print(text='', cls='line'){
+    const div = document.createElement('div');
+    div.className = cls;
+    div.innerHTML = linkify(escapeHtml(text));
+    el.screen.appendChild(div);
+    el.screen.scrollTop = el.screen.scrollHeight;
+  }
+  function println(){ print(''); }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function linkify(s){
+    return s.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noreferrer">$1</a>');
+  }
+
+  /* 命令注册器 */
+  function cmd(name, fn, help){
+    STATE.commands[name] = { run: fn, help };
+  }
+
+  /* ========== 3) 命令定义 ========== */
+  cmd('help', () => {
+    const list = Object.entries(STATE.commands)
+            .map(([k, v]) => `  <span class="accent">${k.padEnd(10)}</span> ${v.help || ''}`)
+            .join('\n');
+    print("Available commands:\n" + list);
+  }, 'show this help');
+
+  cmd('about', () => {
+    print(`${PROFILE.name} — ${PROFILE.title}`);
+    print(`Location: ${PROFILE.location}`);
+    print(`Email: ${PROFILE.email}  [type "contact" to copy]`);
+    print(`GitHub: ${PROFILE.socials.github}`);
+    print(`Tip: try "projects" or "skills"`);
+  }, 'about me');
+
+  cmd('skills', () => {
+    print(`Languages: C/C++, Python, Rust`);
+    print(`Systems: HPC, CUDA, Parallel Runtime, Linux`);
+    print(`AI/ML: LLM, RAG, Distillation, S4/HiPPO`);
+    print(`Tools: Git, Docker, GCP, VSCode/WebStorm`);
+  }, 'list skills');
+
+  cmd('projects', () => {
+    PROFILE.projects.forEach(p => {
+      print(`• <span class="accent">${p.name}</span> — ${p.desc}`);
+      print(`  ${p.url}`);
+    });
+  }, 'show projects');
+
+  cmd('cv', () => {
+    if(PROFILE.resumeUrl){
+      print(`Opening resume… ${location.origin + '/' + PROFILE.resumeUrl}`);
+      openNew(PROFILE.resumeUrl);
+    } else print('No resume configured.');
+  }, 'open resume');
+
+  cmd('contact', async () => {
+    const text = PROFILE.email;
+    try{
+      await navigator.clipboard.writeText(text);
+      print(`📋 Email copied to clipboard: <span class="accent">${text}</span>`);
+    }catch{
+      print(`Email: <span class="accent">${text}</span> (copy failed, copy manually)`);
+    }
+  }, 'copy my email');
+
+  cmd('socials', () => {
+    for(const [k,v] of Object.entries(PROFILE.socials)){
+      print(`${k}: ${v}`);
+    }
+  }, 'social links');
+
+  cmd('whoami', () => {
+    print(`${PROFILE.handle}@github`);
+  }, 'print username');
+
+  cmd('theme', (arg) => {
+    if(!arg){ print(`Current theme: ${STATE.theme}. Usage: theme [dark|light|auto]`); return; }
+    const opt = arg.toLowerCase();
+    if(!['dark','light','auto'].includes(opt)){ print('Unknown theme.'); return; }
+    setTheme(opt); print(`Theme set to ${opt}.`);
+  }, 'switch theme [dark|light|auto]');
+
+  cmd('ls', () => {
+    print(`README  resume.pdf  projects/  contact  about`);
+  }, 'list pseudo files');
+
+  cmd('cat', (arg) => {
+    if(!arg){ print('Usage: cat <file>'); return; }
+    if(arg.toLowerCase()==='readme' || arg.toLowerCase()==='readme.md'){
+      print(PROFILE.readme);
+    }else{
+      print(`cat: ${arg}: No such file`);
+    }
+  }, 'print file content (e.g., cat README)');
+
+  cmd('open', (arg) => {
+    if(!arg){ print('Usage: open <url>'); return; }
+    if(!/^https?:\/\//.test(arg)) arg = 'https://' + arg;
+    openNew(arg); print(`Opening ${arg}`);
+  }, 'open a link');
+
+  cmd('clear', () => { el.screen.innerHTML=''; }, 'clear screen');
+
+  /* ========= 4) 输入处理 / 自动补全 / 历史 ========= */
+  el.input.addEventListener('keydown', (e) => {
+    const value = el.input.value;
+
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      handleCommand(value);
+      return;
+    }
+    if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      if(STATE.history.length){
+        STATE.idx = (STATE.idx === null ? STATE.history.length : STATE.idx) - 1;
+        if(STATE.idx < 0) STATE.idx = 0;
+        el.input.value = STATE.history[STATE.idx];
+      }
+    }
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      if(STATE.history.length && STATE.idx !== null){
+        STATE.idx = STATE.idx + 1;
+        if(STATE.idx >= STATE.history.length){ STATE.idx = null; el.input.value=''; }
+        else el.input.value = STATE.history[STATE.idx];
+      }
+    }
+    if(e.key === 'Tab'){
+      e.preventDefault();
+      const parts = value.trim().split(/\s+/);
+      if(parts.length <= 1){
+        const keys = Object.keys(STATE.commands).filter(k => k.startsWith(parts[0]||''));
+        if(keys.length === 1) el.input.value = keys[0] + ' ';
+        else if(keys.length > 1) print(keys.join('  '));
+      }
+    }
+  });
+
+  function handleCommand(input){
+    const raw = input.trim();
+    print(`${el.ps1.textContent} ${escapeHtml(raw)}`);
+    if(!raw){ println(); return; }
+
+    // 保存历史
+    STATE.history.push(raw);
+    localStorage.setItem('hist', JSON.stringify(STATE.history));
+    STATE.idx = null;
+
+    const [name, ...rest] = raw.split(/\s+/);
+    const arg = rest.join(' ').trim();
+
+    const c = STATE.commands[name.toLowerCase()];
+    if(!c){
+      print(`command not found: ${name}. Type "help"`);
+      println();
+      el.input.value=''; return;
+    }
+    try{
+      const out = c.run(arg);
+      if(out instanceof Promise){ out.finally(() => println()); } else println();
+    }catch(err){
+      print(`<span class="danger">Error:</span> ${escapeHtml(err.message||String(err))}`);
+      println();
+    }
+    el.input.value='';
+  }
+
+  /* ========= 5) 工具函数 ========= */
+  function openNew(url){
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noreferrer'; a.click();
+  }
+  function setTheme(mode){
+    STATE.theme = mode;
+    localStorage.setItem('theme', mode);
+    el.app.setAttribute('data-theme', mode);
+  }
+
+  /* 初始小提示 */
+  setTimeout(() => {
+    print(`Tip: try <span class="accent">help</span>, then <span class="accent">projects</span> or <span class="accent">contact</span>.`);
+  }, 300);
+</script>
 </body>
 </html>

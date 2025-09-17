@@ -54,13 +54,11 @@
 
     .footer{ margin-top:8px; text-align:right; color:var(--muted); font-size:12px }
 
-    /* small CRT scanline vibe */
     .screen:after{
       content:""; position:sticky; bottom:-14px; left:0; right:0; height:14px;
       background:linear-gradient(180deg, transparent, rgba(0,0,0,.35));
       pointer-events:none;
     }
-    /* mobile */
     @media (max-width:640px){ .wrap{height: 86vh} .title{display:none} }
   </style>
 </head>
@@ -87,26 +85,27 @@
 <script>
   /* ========= 1) 可配置的个人信息（改这里） ========= */
   const PROFILE = {
-    name: "Your Name",
-    handle: "yourname",
-    title: "CS Student · Systems & AI",
-    email: "you@example.com",
-    location: "Xiamen / Remote",
-    resumeUrl: "resume.pdf", // 放到根目录即可
+    name: "william",
+    handle: "vixitor",
+    title: "CS Student · ACMer/ICPCer",
+    email: "whe961@gmail.com",
+    location: "Shanghai / Xiamen",
+    resumeUrl: "resume.pdf",
     socials: {
-      github: "https://github.com/yourname",
+      github: "https://github.com/vixitor",
       linkedin: "https://www.linkedin.com/in/yourname/",
       twitter: "https://x.com/yourname"
     },
     projects: [
       { name: "GraphRAG", desc: "图结构 RAG，关系抽取 & 可解释检索", url: "https://github.com/yourname/graph-rag" },
       { name: "GWAS Pipeline", desc: "REGENIE + Hail 云端并行，自动绘图", url: "https://github.com/yourname/gwas-pipeline" },
-      { name: "TaskSys", desc: "工作窃取队列与粒度控制", url: "https://github.com/yourname/tasksys" },
+      { name: "TaskSys", desc: "工作窃取队列与粒度控制", url: "https://github.com/yourname/tasksys" }
     ],
-    readme: `# README
-Hi, I'm ${this?.name || 'Your Name'}.
-This is my terminal-style homepage. Try commands: help, about, skills, projects, cv, contact, socials, theme, clear, whoami, ls, cat README, open <url>.`
+    readme: "" // 下面马上填充
   };
+  PROFILE.readme = `# README
+Hi, I'm ${PROFILE.name}.
+This is my terminal-style homepage. Try commands: help, about, skills, projects, cv, contact, socials, theme, clear, whoami, ls, cat README, open <url>.`;
 
   /* ========= 2) 终端核心逻辑 ========= */
   const el = {
@@ -139,11 +138,11 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
     lines.forEach(l => print(l));
   }
 
-  /* 打印与滚动 */
-  function print(text='', cls='line'){
+  /* 打印与滚动（新增 html 参数） */
+  function print(text = '', cls = 'line', { html = false } = {}) {
     const div = document.createElement('div');
     div.className = cls;
-    div.innerHTML = linkify(escapeHtml(text));
+    div.innerHTML = html ? text : linkify(escapeHtml(text));
     el.screen.appendChild(div);
     el.screen.scrollTop = el.screen.scrollHeight;
   }
@@ -161,12 +160,13 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
     STATE.commands[name] = { run: fn, help };
   }
 
-  /* ========== 3) 命令定义 ========== */
+  /* ========== 3) 命令定义（需要高亮的输出用 html:true） ========== */
+
   cmd('help', () => {
     const list = Object.entries(STATE.commands)
-            .map(([k, v]) => `  <span class="accent">${k.padEnd(10)}</span> ${v.help || ''}`)
+            .map(([k, v]) => `  <span class="accent">${k.padEnd(10)}</span> ${escapeHtml(v.help || '')}`)
             .join('\n');
-    print("Available commands:\n" + list);
+    print("Available commands:\n" + list, 'line', { html: true });
   }, 'show this help');
 
   cmd('about', () => {
@@ -186,7 +186,7 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
 
   cmd('projects', () => {
     PROFILE.projects.forEach(p => {
-      print(`• <span class="accent">${p.name}</span> — ${p.desc}`);
+      print(`• <span class="accent">${escapeHtml(p.name)}</span> — ${escapeHtml(p.desc)}`, 'line', { html: true });
       print(`  ${p.url}`);
     });
   }, 'show projects');
@@ -202,9 +202,9 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
     const text = PROFILE.email;
     try{
       await navigator.clipboard.writeText(text);
-      print(`📋 Email copied to clipboard: <span class="accent">${text}</span>`);
+      print(`📋 Email copied to clipboard: <span class="accent">${escapeHtml(text)}</span>`, 'line', { html: true });
     }catch{
-      print(`Email: <span class="accent">${text}</span> (copy failed, copy manually)`);
+      print(`Email: <span class="accent">${escapeHtml(text)}</span> (copy failed, copy manually)`, 'line', { html: true });
     }
   }, 'copy my email');
 
@@ -287,7 +287,6 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
     print(`${el.ps1.textContent} ${escapeHtml(raw)}`);
     if(!raw){ println(); return; }
 
-    // 保存历史
     STATE.history.push(raw);
     localStorage.setItem('hist', JSON.stringify(STATE.history));
     STATE.idx = null;
@@ -305,7 +304,7 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
       const out = c.run(arg);
       if(out instanceof Promise){ out.finally(() => println()); } else println();
     }catch(err){
-      print(`<span class="danger">Error:</span> ${escapeHtml(err.message||String(err))}`);
+      print(`<span class="danger">Error:</span> ${escapeHtml(err.message||String(err))}`, 'line', { html: true });
       println();
     }
     el.input.value='';
@@ -322,9 +321,9 @@ This is my terminal-style homepage. Try commands: help, about, skills, projects,
     el.app.setAttribute('data-theme', mode);
   }
 
-  /* 初始小提示 */
+  /* 初始小提示（用 html:true 渲染高亮 span） */
   setTimeout(() => {
-    print(`Tip: try <span class="accent">help</span>, then <span class="accent">projects</span> or <span class="accent">contact</span>.`);
+    print(`Tip: try <span class="accent">help</span>, then <span class="accent">projects</span> or <span class="accent">contact</span>.`, 'line', { html: true });
   }, 300);
 </script>
 </body>
